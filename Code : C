@@ -1,0 +1,199 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+char flip(char level) {
+    return (level == '+') ? '-' : '+';
+}
+
+void nrzl_encode(char *data) {
+    printf("NRZ-L Encoding:\n");
+    for (int i = 0; data[i]; i++) {
+        printf("%c ", (data[i] == '1') ? '+' : '-');
+    }
+    printf("\n");
+}
+
+void nrzi_encode(char *data) {
+    printf("NRZ-I Encoding:\n");
+    char level = '-';
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '1') level = flip(level);
+        printf("%c ", level);
+    }
+    printf("\n");
+}
+
+void manchester_encode(char *data) {
+    printf("Manchester Encoding:\n");
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '1') printf("-+ ");
+        else printf("+- ");
+    }
+    printf("\n");
+}
+
+void diff_manchester_encode(char *data) {
+    printf("Differential Manchester Encoding:\n");
+    char level = '+';
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '0') level = flip(level);
+        printf("%c%c ", level, flip(level));
+    }
+    printf("\n");
+}
+
+void ami_encode(char *data) {
+    printf("AMI Encoding:\n");
+    char level = '-';
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '1') {
+            level = flip(level);
+            printf("%c ", level);
+        } else {
+            printf("0 ");
+        }
+    }
+    printf("\n");
+}
+
+void pseudo_ternary_encode(char *data) {
+    printf("Pseudo-Ternary Encoding:\n");
+    char level = '-';
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '0') {
+            level = flip(level);
+            printf("%c ", level);
+        } else {
+            printf("0 ");
+        }
+    }
+    printf("\n");
+}
+
+void decode_nrzl(char *encoded) {
+    printf("Decoding NRZ-L:\n");
+    char *token = strtok(encoded, " ");
+    while (token) {
+        printf("%c ", (token[0] == '+') ? '1' : '0');
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+void decode_nrzi(char *encoded) {
+    printf("Decoding NRZ-I:\n");
+    char *token = strtok(encoded, " ");
+    char prev = '-';
+    while (token) {
+        if (token[0] != prev) {
+            printf("1 ");
+            prev = token[0];
+        } else {
+            printf("0 ");
+        }
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+void decode_manchester(char *encoded) {
+    printf("Decoding Manchester:\n");
+    char *token = strtok(encoded, " ");
+    while (token) {
+        if (strcmp(token, "-+") == 0) printf("1 ");
+        else if (strcmp(token, "+-") == 0) printf("0 ");
+        else printf("? ");
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+void decode_diff_manchester(char *encoded) {
+    printf("Decoding Differential Manchester:\n");
+    char *token = strtok(encoded, " ");
+    char prev = '+';
+    while (token) {
+        if (token[0] == prev) printf("1 ");
+        else {
+            printf("0 ");
+            prev = token[0];
+        }
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+void decode_ami(char *encoded) {
+    printf("Decoding AMI:\n");
+    char *token = strtok(encoded, " ");
+    while (token) {
+        if (strcmp(token, "0") == 0) printf("0 ");
+        else printf("1 ");
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+void decode_pseudo_ternary(char *encoded) {
+    printf("Decoding Pseudo-Ternary:\n");
+    char *token = strtok(encoded, " ");
+    while (token) {
+        if (strcmp(token, "0") == 0) printf("1 ");
+        else printf("0 ");
+        token = strtok(NULL, " ");
+    }
+    printf("\n");
+}
+
+int main() {
+    char data[100], encoded[300];
+    int op, scheme;
+
+    while (1) {
+        printf("\n==== Line Encoding and Decoding Simulator ====\n");
+        printf("1. Encode\n2. Decode\n0. Exit\nChoose: ");
+        scanf("%d", &op);
+        getchar();
+
+        if (op == 0) break;
+
+        printf("\nSelect Scheme:\n");
+        printf("1. NRZ-L\n2. NRZ-I\n3. Manchester\n4. Differential Manchester\n5. AMI\n6. Pseudo-Ternary\n");
+        printf("Enter your choice: ");
+        scanf("%d", &scheme);
+        getchar();
+
+        if (op == 1) {
+            printf("Enter binary data: ");
+            scanf("%s", data);
+            switch (scheme) {
+                case 1: nrzl_encode(data); break;
+                case 2: nrzi_encode(data); break;
+                case 3: manchester_encode(data); break;
+                case 4: diff_manchester_encode(data); break;
+                case 5: ami_encode(data); break;
+                case 6: pseudo_ternary_encode(data); break;
+                default: printf("Invalid choice\n");
+            }
+        } else if (op == 2) {
+            printf("Enter encoded signal (space-separated):\n");
+            fgets(encoded, sizeof(encoded), stdin);
+            encoded[strcspn(encoded, "\n")] = 0;
+
+            switch (scheme) {
+                case 1: decode_nrzl(encoded); break;
+                case 2: decode_nrzi(encoded); break;
+                case 3: decode_manchester(encoded); break;
+                case 4: decode_diff_manchester(encoded); break;
+                case 5: decode_ami(encoded); break;
+                case 6: decode_pseudo_ternary(encoded); break;
+                default: printf("Invalid choice\n");
+            }
+        } else {
+            printf("Invalid operation!\n");
+        }
+    }
+
+    return 0;
+}
