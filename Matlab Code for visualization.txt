@@ -1,0 +1,267 @@
+In matlab, the file need to saved by:    line_encoding_decoding_simulator.m
+To run this project in the MATLAB Command Window or Editor, just type:    line_encoding_decoding_simulator   
+
+
+Matlab Code:
+
+function line_encoding_decoding_simulator()
+    clc;
+    disp('--- Line Encoding and Decoding Simulator ---');
+    
+    mode = input('Choose Mode (1 = Encode, 2 = Decode): ');
+
+    fprintf('\nSelect Scheme:\n');
+    fprintf('1. NRZ-L\n2. NRZ-I\n3. Manchester\n4. Differential Manchester\n5. AMI\n6. Pseudo-Ternary\n');
+    choice = input('Enter your choice: ');
+
+    if mode == 1
+        data = input('Enter binary data (e.g., 1011001): ', 's');
+        switch choice
+            case 1
+                [encoded, signal] = encode_nrzl(data);
+            case 2
+                [encoded, signal] = encode_nrzi(data);
+            case 3
+                [encoded, signal] = encode_manchester(data);
+            case 4
+                [encoded, signal] = encode_diff_manchester(data);
+            case 5
+                [encoded, signal] = encode_ami(data);
+            case 6
+                [encoded, signal] = encode_pseudo_ternary(data);
+            otherwise
+                disp('Invalid choice');
+                return;
+        end
+        disp(['Encoded: ', encoded]);
+
+        % Plot the waveform
+        figure;
+        stairs(signal, 'LineWidth', 2);
+        ylim([-2, 2]);
+        title('Encoded Signal');
+        xlabel('Time');
+        ylabel('Signal Level');
+        grid on;
+
+    elseif mode == 2
+        raw = input('Enter signal string (e.g., +-+-+): ', 's');
+        signal = convert_input_to_signal(raw);
+
+        switch choice
+            case 1
+                decoded = decode_nrzl(signal);
+            case 2
+                decoded = decode_nrzi(signal);
+            case 3
+                decoded = decode_manchester(signal);
+            case 4
+                decoded = decode_diff_manchester(signal);
+            case 5
+                decoded = decode_ami(signal);
+            case 6
+                decoded = decode_pseudo_ternary(signal);
+            otherwise
+                disp('Invalid choice');
+                return;
+        end
+        disp(['Decoded: ', decoded]);
+    else
+        disp('Invalid Mode');
+    end
+end
+
+% ----------------- Encoding Functions -----------------
+
+function [encoded, signal] = encode_nrzl(data)
+    encoded = '';
+    signal = zeros(1, length(data));
+    for i = 1:length(data)
+        if data(i) == '1'
+            signal(i) = 1;
+            encoded = [encoded '+'];
+        else
+            signal(i) = -1;
+            encoded = [encoded '-'];
+        end
+    end
+end
+
+function [encoded, signal] = encode_nrzi(data)
+    encoded = '';
+    signal = zeros(1, length(data));
+    level = -1;
+    for i = 1:length(data)
+        if data(i) == '1'
+            level = -level;
+        end
+        signal(i) = level;
+        encoded = [encoded, levelChar(level)];
+    end
+end
+
+function [encoded, signal] = encode_manchester(data)
+    encoded = '';
+    signal = zeros(1, 2 * length(data));
+    for i = 1:length(data)
+        if data(i) == '1'
+            signal(2*i - 1) = -1;
+            signal(2*i) = 1;
+            encoded = [encoded '-+'];
+        else
+            signal(2*i - 1) = 1;
+            signal(2*i) = -1;
+            encoded = [encoded '+-'];
+        end
+    end
+end
+
+function [encoded, signal] = encode_diff_manchester(data)
+    encoded = '';
+    signal = zeros(1, 2 * length(data));
+    level = 1;
+    for i = 1:length(data)
+        if data(i) == '0'
+            level = -level;
+        end
+        signal(2*i - 1) = level;
+        signal(2*i) = -level;
+        encoded = [encoded, levelChar(level), levelChar(-level)];
+    end
+end
+
+function [encoded, signal] = encode_ami(data)
+    encoded = '';
+    signal = zeros(1, length(data));
+    level = 1;
+    for i = 1:length(data)
+        if data(i) == '1'
+            signal(i) = level;
+            encoded = [encoded, levelChar(level)];
+            level = -level;
+        else
+            signal(i) = 0;
+            encoded = [encoded '0'];
+        end
+    end
+end
+
+function [encoded, signal] = encode_pseudo_ternary(data)
+    encoded = '';
+    signal = zeros(1, length(data));
+    level = 1;
+    for i = 1:length(data)
+        if data(i) == '0'
+            signal(i) = level;
+            encoded = [encoded, levelChar(level)];
+            level = -level;
+        else
+            signal(i) = 0;
+            encoded = [encoded '0'];
+        end
+    end
+end
+
+% ----------------- Decoding Functions -----------------
+
+function decoded = decode_nrzl(signal)
+    decoded = '';
+    for i = 1:length(signal)
+        if signal(i) == 1
+            decoded = [decoded '1'];
+        else
+            decoded = [decoded '0'];
+        end
+    end
+end
+
+function decoded = decode_nrzi(signal)
+    decoded = '1';
+    for i = 2:length(signal)
+        if signal(i) ~= signal(i-1)
+            decoded = [decoded '1'];
+        else
+            decoded = [decoded '0'];
+        end
+    end
+end
+
+function decoded = decode_manchester(signal)
+    decoded = '';
+    for i = 1:2:length(signal)
+        if signal(i) == -1 && signal(i+1) == 1
+            decoded = [decoded '1'];
+        elseif signal(i) == 1 && signal(i+1) == -1
+            decoded = [decoded '0'];
+        else
+            decoded = [decoded '?'];  % error pattern
+        end
+    end
+end
+
+function decoded = decode_diff_manchester(signal)
+    decoded = '';
+    if length(signal) < 2
+        decoded = '?';
+        return;
+    end
+    prev = signal(1);
+    for i = 2:2:length(signal)
+        if signal(i) ~= prev
+            decoded = [decoded '0'];
+        else
+            decoded = [decoded '1'];
+        end
+        prev = signal(i);
+    end
+end
+
+function decoded = decode_ami(signal)
+    decoded = '';
+    for i = 1:length(signal)
+        if signal(i) == 0
+            decoded = [decoded '0'];
+        else
+            decoded = [decoded '1'];
+        end
+    end
+end
+
+function decoded = decode_pseudo_ternary(signal)
+    decoded = '';
+    for i = 1:length(signal)
+        if signal(i) == 0
+            decoded = [decoded '1'];
+        else
+            decoded = [decoded '0'];
+        end
+    end
+end
+
+% ----------------- Utilities -----------------
+
+function ch = levelChar(level)
+    if level == 1
+        ch = '+';
+    elseif level == -1
+        ch = '-';
+    else
+        ch = '0';
+    end
+end
+
+function signal = convert_input_to_signal(str)
+    signal = zeros(1, length(str));
+    for i = 1:length(str)
+        switch str(i)
+            case '+'
+                signal(i) = 1;
+            case '-'
+                signal(i) = -1;
+            case '0'
+                signal(i) = 0;
+            otherwise
+                error('Invalid character in signal input. Use only +, -, or 0.');
+        end
+    end
+end
